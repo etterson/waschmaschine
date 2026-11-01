@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Waschmaschinen-Status</title>
+    <style>
+        :root {
+            --bg-color: #f4f4f9;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --info-color: #7f8c8d;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-color: #f4f4f9;
+            --info-color: #a0a0a0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--info-color);
+            color: var(--text-color);
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: transform 0.2s ease;
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.05);
+        }
+
+        .container {
+            text-align: center;
+            background: var(--card-bg);
+            padding: 2.5rem 2rem;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 360px;
+            transition: background-color 0.3s ease;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            margin-top: 0;
+            margin-bottom: 1.5rem;
+        }
+
+        .washer-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            outline: none;
+            transition: transform 0.1s ease;
+        }
+
+        .washer-btn:active {
+            transform: scale(0.96);
+        }
+
+        .washer-svg {
+            width: 180px;
+            height: 180px;
+            transition: filter 0.3s ease;
+        }
+
+        .status-free .washer-body { fill: #2ecc71; }
+        .status-busy .washer-body { fill: #e74c3c; }
+
+        .washer-details { fill: #ffffff; }
+
+        .status-busy .inner-drum {
+            transform-origin: 100px 115px;
+            animation: spin 2s linear infinite;
+        }
+
+        .status-free .inner-drum {
+            transform-origin: 100px 115px;
+            animation: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .status-text {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-top: 1.2rem;
+            letter-spacing: 1px;
+        }
+
+        .status-free-text { color: #2ecc71; }
+        .status-busy-text { color: #e74c3c; }
+
+        .info {
+            margin-top: 0.8rem;
+            font-size: 0.85rem;
+            color: var(--info-color);
+        }
+    </style>
+
+    <!-- Firebase SDK & Integration mit deinen Daten -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCdzWilmFqhySJQZBbw4PIsA0hrMDUi6gY",
+            authDomain: "waschmachine-haus.firebaseapp.com",
+            databaseURL: "https://waschmachine-haus-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "waschmachine-haus",
+            storageBucket: "waschmachine-haus.firebasestorage.app",
+            messagingSenderId: "1007460145245",
+            appId: "1:1007460145245:web:a56c4cb2d7edb9cd69d5b4"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const statusRef = ref(db, 'waschmaschine/besetzt');
+
+        const containerCard = document.getElementById('statusContainer');
+        const statusLabel = document.getElementById('statusLabel');
+
+        onValue(statusRef, (snapshot) => {
+            const isBusy = snapshot.val();
+            if (isBusy) {
+                containerCard.className = "container status-busy";
+                statusLabel.className = "status-text status-busy-text";
+                statusLabel.innerText = "BESETZT";
+            } else {
+                containerCard.className = "container status-free";
+                statusLabel.className = "status-text status-free-text";
+                statusLabel.innerText = "FREI";
+            }
+        });
+
+        window.toggleStatus = function() {
+            const isCurrentlyBusy = containerCard.classList.contains('status-busy');
+            set(statusRef, !isCurrentlyBusy);
+        };
+    </script>
+</head>
+<body>
+
+    <button class="theme-toggle" id="themeToggleBtn" onclick="toggleTheme()" title="Design umschalten">🌙</button>
+
+    <div id="statusContainer" class="container status-free">
+        <h1>Waschmaschine</h1>
+        
+        <button class="washer-btn" onclick="toggleStatus()" title="Status umschalten">
+            <svg class="washer-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                <rect class="washer-body" x="30" y="15" width="140" height="170" rx="16" />
+                <rect class="washer-details" x="42" y="27" width="35" height="12" rx="4" opacity="0.9"/>
+                <circle class="washer-details" cx="132" cy="33" r="5" opacity="0.9"/>
+                <circle class="washer-details" cx="150" cy="33" r="5" opacity="0.9"/>
+                <circle class="washer-details" cx="114" cy="33" r="5" opacity="0.9"/>
+                <circle cx="100" cy="115" r="45" fill="none" stroke="#ffffff" stroke-width="8" opacity="0.9"/>
+                <g class="inner-drum">
+                    <circle cx="100" cy="115" r="32" fill="none" stroke="#ffffff" stroke-width="3" stroke-dasharray="6 4" opacity="0.7"/>
+                    <path class="washer-details" d="M 80 120 Q 90 100 100 120 T 120 120 Q 110 135 100 135 Q 90 135 80 120 Z" opacity="0.8"/>
+                </g>
+            </svg>
+        </button>
+
+        <div id="statusLabel" class="status-text status-free-text">Verbindung...</div>
+        <div class="info">Tippe auf die Maschine, um den Status zu wechseln</div>
+    </div>
+
+    <script>
+        const htmlElement = document.documentElement;
+        const themeToggleBtn = document.getElementById('themeToggleBtn');
+
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        if (savedTheme === 'dark') {
+            htmlElement.setAttribute('data-theme', 'dark');
+            themeToggleBtn.innerText = '☀️';
+        }
+
+        function toggleTheme() {
+            const currentTheme = htmlElement.getAttribute('data-theme');
+            if (currentTheme === 'dark') {
+                htmlElement.removeAttribute('data-theme');
+                localStorage.setItem('theme', 'light');
+                themeToggleBtn.innerText = '🌙';
+            } else {
+                htmlElement.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+                themeToggleBtn.innerText = '☀️';
+            }
+        }
+    </script>
+
+</body>
+</html>
